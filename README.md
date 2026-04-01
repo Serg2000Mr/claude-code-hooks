@@ -2,7 +2,8 @@
 
 Хуки [Claude Code](https://claude.ai/code) для Windows — звуковые уведомления, защита файлов, автоматизация.
 
-## Хук 1 — Звук при запросе разрешения
+<details>
+<summary>1. Звук при запросе разрешения</summary>
 
 Когда Claude Code запрашивает разрешение на выполнение команды, играет системный звук Windows. Удобно если вы отвлеклись — не нужно следить за экраном.
 
@@ -41,7 +42,7 @@
 |--------|----------|
 | `powershell ... PlaySync()` через bash | stdin не передаётся в дочерний процесс |
 | `shell: powershell` + `$input` | stdin недоступен в command-hook |
-| `subprocess.Popen(["powershell", ...])` | Popen неблокирующий; при async:true stdin вообще не пишется |
+| `subprocess.Popen(["powershell", ...])` | Popen неблокирующий; при `async:true` stdin не пишется |
 | `Notification: permission_prompt` | Событие не срабатывает в VS Code расширении |
 
 ### Отладка
@@ -64,21 +65,32 @@
 
 Запустите авто-разрешённую и неразрешённую команду, прочитайте лог — увидите разницу в `permission_suggestions`.
 
-## Хук 2 — Защита файлов вне диска C:
+</details>
+
+<details>
+<summary>2. Защита файлов вне диска C:</summary>
+
+Блокирует любое чтение или запись файлов на дисках кроме C:. Полезно если Claude Code работает в нескольких проектах и не должен случайно трогать другие разделы.
 
 ```json
-"PreToolUse": [
-  {
-    "matcher": "Read|Edit|Write|Glob|Grep",
-    "hooks": [
+{
+  "hooks": {
+    "PreToolUse": [
       {
-        "type": "command",
-        "command": "python3 -c \"import sys,json; d=json.load(sys.stdin); ti=d.get('tool_input',{}); p=ti.get('file_path') or ti.get('pattern') or ti.get('path') or ''; p[1:2]==':' and p[0].lower()!='c' and print(json.dumps({'hookSpecificOutput':{'hookEventName':'PreToolUse','permissionDecision':'deny','permissionDecisionReason':'Доступ вне диска C: запрещён'}}))\""
+        "matcher": "Read|Edit|Write|Glob|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"import sys,json; d=json.load(sys.stdin); ti=d.get('tool_input',{}); p=ti.get('file_path') or ti.get('pattern') or ti.get('path') or ''; p[1:2]==':' and p[0].lower()!='c' and print(json.dumps({'hookSpecificOutput':{'hookEventName':'PreToolUse','permissionDecision':'deny','permissionDecisionReason':'Доступ вне диска C: запрещён'}}))\""
+          }
+        ]
       }
     ]
   }
-]
+}
 ```
+
+</details>
 
 ## Требования
 
